@@ -102,7 +102,6 @@
 //           return res.status(500).json({ message: 'Server Error', error });
 //         }
 //       });
-// });
 
 
 import asyncHandler from 'express-async-handler';
