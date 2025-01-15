@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { chatState } from '../../context/ChatProvider';
 import axios from 'axios';
 import UserListItem from '../UserAvatar/UserListItem';
+import UserBadgeItem from '../UserAvatar/UserBadgeItem';
 
 const { Title } = Typography;
 
@@ -15,7 +16,7 @@ const GroupChatModal = ({ children }) => {
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const { user } = chatState();
+  const { user, chats, setChats } = chatState();
 
   const showModal = () => {
     setIsModalOpen(true);
@@ -76,6 +77,50 @@ const GroupChatModal = ({ children }) => {
     debouncedSearch(query); // Call debounced search function
   };
 
+  const handleGroup = (usersToAdd) => {
+    if (selectedUsers.find((u) => u._id === usersToAdd._id)) {
+      toast.error('User already added');
+      return;
+    }
+
+    setSelectedUsers([...selectedUsers, usersToAdd]);
+  };
+
+  const handleDelete = (delUser) => {
+    setSelectedUsers(selectedUsers.filter((sel) => sel._id !== delUser._id));
+  };
+
+  const handleSubmit = async () => {
+    if (!groupChatName || !selectedUsers) {
+      toast.error('Please fill all the fields');
+      return;
+    }
+
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      };
+      const url = 'http://localhost:3000';
+      const { data } = await axios.post(
+        `${url}/api/chat/group`,
+        {
+          name: groupChatName,
+          users: JSON.stringify(selectedUsers.map((u) => u._id)),
+        },
+        config
+      );
+      setChats([data, ...chats]);
+      setIsModalOpen(false);
+      toast.success('New Group Chat Created!');
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || 'Failed to Create the Chat!'
+      );
+    }
+  };
+
   return (
     <>
       {/* Trigger */}
@@ -92,7 +137,7 @@ const GroupChatModal = ({ children }) => {
         open={isModalOpen}
         onCancel={handleCancel}
         footer={[
-          <Button key='create' type='primary' onClick={() => {}}>
+          <Button key='create' type='primary' onClick={handleSubmit}>
             Create Group Chat
           </Button>,
         ]}
@@ -121,6 +166,15 @@ const GroupChatModal = ({ children }) => {
             />
           </Form.Item>
         </Form>
+        <div className='w-full flex flex-wrap'>
+          {selectedUsers.map((u) => (
+            <UserBadgeItem
+              key={u._id}
+              user={u}
+              handleFunction={() => handleDelete(u)}
+            />
+          ))}
+        </div>
 
         {/* Render Search Results */}
         {loading ? (
@@ -128,7 +182,13 @@ const GroupChatModal = ({ children }) => {
         ) : (
           searchResult
             ?.slice(0, 4)
-            .map((user) => <UserListItem key={user._id} user={user} />)
+            .map((user) => (
+              <UserListItem
+                key={user._id}
+                user={user}
+                handleFunction={() => handleGroup(user)}
+              />
+            ))
         )}
       </Modal>
     </>

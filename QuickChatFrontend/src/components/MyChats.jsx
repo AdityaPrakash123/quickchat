@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { chatState } from '../context/ChatProvider';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -10,8 +10,9 @@ import { getSender } from '../config/ChatLogic';
 
 const { Text } = Typography;
 
-const MyChats = () => {
+const MyChats = ({ fetchAgain }) => {
   const { user, selectedChat, setSelectedChat, chats, setChats } = chatState();
+  const [loading, setLoading] = useState(true); // Added state to track loading
 
   const fetchChats = async () => {
     try {
@@ -23,14 +24,16 @@ const MyChats = () => {
       const url = 'http://localhost:3000';
       const { data } = await axios.get(`${url}/api/chat`, config);
       setChats(data);
+      setLoading(false); // Mark loading as complete
     } catch (error) {
+      setLoading(false); // Ensure loading stops on error
       toast.error(error.response?.data?.message || 'Failed to Load the chats');
     }
   };
 
   useEffect(() => {
     fetchChats();
-  }, []);
+  }, [fetchAgain]);
 
   return (
     <div
@@ -53,7 +56,9 @@ const MyChats = () => {
         </GroupChatModal>
       </div>
       <div className='flex flex-col p-3 bg-gray-100 w-full h-full rounded-lg overflow-y-hidden'>
-        {chats ? (
+        {loading ? ( // Show ChatLoading if still fetching
+          <ChatLoading />
+        ) : chats?.length > 0 ? ( // Ensure chats is not empty or undefined
           <Space direction='vertical' className='w-full'>
             {chats.map((chat) => (
               <div
@@ -74,7 +79,7 @@ const MyChats = () => {
             ))}
           </Space>
         ) : (
-          <ChatLoading />
+          <div className='text-center text-gray-500'>No chats available</div> // Display fallback for empty chats
         )}
       </div>
     </div>
