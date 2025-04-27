@@ -23,7 +23,14 @@ import UserListItem from '../UserAvatar/UserListItem';
 const { Text } = Typography;
 
 const Sidedrawer = () => {
-  const { user, setSelectedChat, chats, setChats } = chatState();
+  const {
+    user,
+    setSelectedChat,
+    chats,
+    setChats,
+    notification,
+    setNotification,
+  } = chatState();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [searchResult, setSearchResult] = useState([]);
@@ -64,9 +71,30 @@ const Sidedrawer = () => {
   };
 
   // Notifications menu
+  // const notificationMenu = (
+  //   <Menu>
+  //     <Menu.Item key='1'>No new notifications</Menu.Item>
+  //   </Menu>
+  // );
   const notificationMenu = (
     <Menu>
-      <Menu.Item key='1'>No new notifications</Menu.Item>
+      {!notification.length ? (
+        <Menu.Item key='0'>No new notifications</Menu.Item>
+      ) : (
+        notification.map((notif) => (
+          <Menu.Item
+            key={notif._id}
+            onClick={() => {
+              setSelectedChat(notif.chat);
+              setNotification(notification.filter((n) => n !== notif));
+            }}
+          >
+            {notif.chat.isGroupChat
+              ? `New Message in ${notif.chat.chatName}`
+              : `New Message from ${getSender(user, notif.chat.users)}`}
+          </Menu.Item>
+        ))
+      )}
     </Menu>
   );
 
